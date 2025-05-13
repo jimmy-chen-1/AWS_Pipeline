@@ -53,14 +53,21 @@ This project uses the following AWS services:
 - Predicts nightly prices via a Flask app hosted on EC2.
 - Accessible through a web form behind ALB.
 
+  ![Screenshot 2025-05-13 at 12 34 26 PM](https://github.com/user-attachments/assets/8023f32b-f645-40fc-afef-78710a961060)
+
+
 ### 🔹 Review Score Insights
 - Aggregates customer satisfaction scores by property type.
 - Stores results in `property_insights.csv` and pushes to RDS.
+
 
 ### 🔹 Price Tier Analytics
 - Segments listings into tiers (e.g., <$50, $50–149, $150–299).
 - Analyzes perceived value and accuracy per segment.
 - Output stored in `price_range.csv` for dashboarding or querying.
+
+![Screenshot 2025-05-12 at 9 04 53 PM](https://github.com/user-attachments/assets/fd7c20fe-e2d5-44c2-af4d-2cfbf400c719)
+
 
 ---
 
