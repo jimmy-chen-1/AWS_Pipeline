@@ -98,6 +98,6 @@ MIT License. See `LICENSE` file for details.
 Shengjie (Jimmy) Chen  
 MS Business Analytics @ UIUC  
 GitHub: [@jimmychen-ai](https://jimmyai.uk)  
-LinkedIn: [linkedin.com/in/shengjie-chen](https://linkedin.com/in/shengjie-chen)
+LinkedIn: [linkedin.com/in/shengjie-chen](https://www.linkedin.com/in/chen-shengjie)
 
 
