@@ -1,0 +1,518 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Parallel (1)",
+  "States": {
+    "Parallel (1)": {
+      "Type": "Parallel",
+      "Next": "CreateDatabase",
+      "Branches": [
+        {
+          "StartAt": "ETLprocess",
+          "States": {
+            "ETLprocess": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:11_ETL_job:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "CreateRDS",
+          "States": {
+            "CreateRDS": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:14_create_rds:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "Success (3)"
+            },
+            "Success (3)": {
+              "Type": "Succeed"
+            }
+          }
+        }
+      ]
+    },
+    "CreateDatabase": {
+      "Type": "Task",
+      "Arguments": {
+        "DatabaseInput": {
+          "Name": "data_db"
+        }
+      },
+      "Resource": "arn:aws:states:::aws-sdk:glue:createDatabase",
+      "Next": "CreateCrawler"
+    },
+    "CreateCrawler": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:glue:createCrawler",
+      "Arguments": {
+        "Name": "data_crawler",
+        "Role": "LabRole",
+        "DatabaseName": "data_db",
+        "Targets": {
+          "S3Targets": [
+            {
+              "Path": "s3://raw-data-sc171/processed"
+            }
+          ]
+        },
+        "SchemaChangePolicy": {
+          "UpdateBehavior": "UPDATE_IN_DATABASE",
+          "DeleteBehavior": "DELETE_FROM_DATABASE"
+        }
+      },
+      "Next": "Wait (2)"
+    },
+    "Wait (2)": {
+      "Type": "Wait",
+      "Seconds": 200,
+      "Next": "IngestData"
+    },
+    "IngestData": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": "{% $states.result.Payload %}",
+      "Arguments": {
+        "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:1_ingest_data:$LATEST",
+        "Payload": "{% $states.input %}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Wait"
+    },
+    "Wait": {
+      "Type": "Wait",
+      "Seconds": 160,
+      "Next": "Parallel"
+    },
+    "Parallel": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "MLdata",
+          "States": {
+            "MLdata": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:2_get_output:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "MLprocess"
+            },
+            "MLprocess": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:3_ml_process:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "Wait (1)"
+            },
+            "Wait (1)": {
+              "Type": "Wait",
+              "Seconds": 200,
+              "Next": "CreateTargetGroup"
+            },
+            "CreateTargetGroup": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:16_TargetGroup:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "CreateLoadBalancer"
+            },
+            "CreateLoadBalancer": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:15_load_balancer:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "RefreshAutoScaleGroup"
+            },
+            "RefreshAutoScaleGroup": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:4_refresh_asg:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "Success"
+            },
+            "Success": {
+              "Type": "Succeed"
+            }
+          }
+        },
+        {
+          "StartAt": "GetAVG-property",
+          "States": {
+            "GetAVG-property": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:5_avg_info_property:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "CheckCSV"
+            },
+            "CheckCSV": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Assign": {
+                "csvIsEmpty": "{% $states.result.Payload.csvIsEmpty %}"
+              },
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:6_checkcsv:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "Choice (1)"
+            },
+            "Choice (1)": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Next": "WritePropertyToRDS",
+                  "Condition": "{% ($csvIsEmpty) = (false) %}"
+                }
+              ],
+              "Default": "Fail"
+            },
+            "WritePropertyToRDS": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:12_rds_reader:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "SentSNS"
+            },
+            "SentSNS": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:7_sendsns:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "Success (1)"
+            },
+            "Success (1)": {
+              "Type": "Succeed"
+            },
+            "Fail": {
+              "Type": "Fail"
+            }
+          }
+        },
+        {
+          "StartAt": "Price-Range",
+          "States": {
+            "Price-Range": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:8_PriceRange:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "CheckCSV2"
+            },
+            "CheckCSV2": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Assign": {
+                "csvIsEmpty": "{% $states.result.Payload.csvIsEmpty %}"
+              },
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:9_checkcsv:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "Choice"
+            },
+            "Choice": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Next": "WriteRangeToRDS",
+                  "Condition": "{% ($csvIsEmpty) = (false) %}"
+                }
+              ],
+              "Default": "Fail (1)"
+            },
+            "WriteRangeToRDS": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:13_rds_price_range:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "SentSNS2"
+            },
+            "SentSNS2": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "arn:aws:lambda:us-east-1:514475511198:function:10_sensns:$LATEST",
+                "Payload": "{% $states.input %}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Next": "Success (2)"
+            },
+            "Success (2)": {
+              "Type": "Succeed"
+            },
+            "Fail (1)": {
+              "Type": "Fail"
+            }
+          }
+        }
+      ],
+      "End": true
+    }
+  },
+  "QueryLanguage": "JSONata"
+}
