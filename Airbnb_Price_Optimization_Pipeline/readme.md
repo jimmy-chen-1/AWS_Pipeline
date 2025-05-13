@@ -1,12 +1,16 @@
 # Airbnb Price Optimization Pipeline (AWS Serverless)
 
-This repository contains a fully serverless data and machine learning pipeline built on AWS to help Airbnb property owners determine fair rental pricing and gain insights into customer satisfaction metrics and price-tier performance.
+This repository contains a fully serverless data and machine learning pipeline built on AWS to help Airbnb property owners determine fair rental pricing and gain insights into customer satisfaction metrics and price-tier performance. 
+
+Sources from: https://www.kaggle.com/datasets/samyukthamurali/airbnb-ratings-dataset
 
 ---
 
 ## 🧠 Project Objective
 
 To automate the ingestion, processing, and analysis of Airbnb listing data, and to deploy a machine learning model (K-Nearest Neighbors) that predicts nightly rental prices based on listing attributes such as property type, room type, location, and amenities. The pipeline also generates analytical insights on customer review scores and performance across price tiers.
+
+![Screenshot 2025-05-13 at 12 46 12 PM](https://github.com/user-attachments/assets/1d4d754b-40cb-4289-8518-a20507987310)
 
 ---
 
