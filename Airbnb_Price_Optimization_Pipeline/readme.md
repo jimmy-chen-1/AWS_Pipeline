@@ -10,7 +10,9 @@ Sources from: https://www.kaggle.com/datasets/samyukthamurali/airbnb-ratings-dat
 
 To automate the ingestion, processing, and analysis of Airbnb listing data, and to deploy a machine learning model (K-Nearest Neighbors) that predicts nightly rental prices based on listing attributes such as property type, room type, location, and amenities. The pipeline also generates analytical insights on customer review scores and performance across price tiers.
 
-![Screenshot 2025-05-13 at 12 46 12 PM](https://github.com/user-attachments/assets/1d4d754b-40cb-4289-8518-a20507987310)
+<img width="500" alt="Screenshot 2025-05-13 at 5 35 57 PM" src="https://github.com/user-attachments/assets/7b01b380-8ac2-4ef5-8f9a-04f421a7675f" />
+<img width="940" alt="Screenshot 2025-05-13 at 5 36 22 PM" src="https://github.com/user-attachments/assets/81ae6801-b315-4c41-a230-42cc83102ebe" />
+
 
 ---
 
